@@ -1,75 +1,99 @@
-# STEP - Ecommerce de Zapatillas
+# 🛒 Marketplace Frontend
 
-Proyecto frontend desarrollado con React + Vite para la simulación de un ecommerce de zapatillas deportivas y urbanas.
+Frontend del proyecto **Marketplace**, desarrollado con **React + Vite** como Trabajo Práctico Integrador.
 
 ---
 
-## Tecnologías utilizadas
+# 🚀 Tecnologías utilizadas
 
 - React
 - Vite
+- Redux Toolkit
 - React Router DOM
+- Axios
 - JavaScript
 - CSS
 
 ---
 
-## Funcionalidades implementadas
+# 📋 Funcionalidades
 
-### Navegación
+## 👤 Usuario
 
-- React Router DOM para navegación entre páginas.
-- Rutas dinámicas para el detalle de productos.
-
-### Catálogo de productos
-
-- Visualización de catálogo de zapatillas.
-- 10 productos disponibles.
-- Búsqueda por nombre.
-- Filtro por marca.
-
-### Detalle de producto
-
-- Ruta dinámica mediante `/product/:id`.
-- Información detallada del producto.
-- Selección de talle.
-
-### Favoritos
-
-- Agregar productos a favoritos.
-- Eliminar productos de favoritos.
-- Persistencia utilizando LocalStorage.
-
-### Carrito
-
-- Visualización de productos.
-- Modificación de cantidad.
-- Cálculo automático de subtotal.
-- Cálculo de envío.
-- Cálculo de total.
-- Vaciar carrito.
-
-### Checkout
-
-- Formulario de compra.
-- Selección de método de pago.
-- Confirmación de compra.
-
-### Compra Exitosa
-
-- Confirmación visual de pedido realizado.
-
-### React
-
-- Componentes reutilizables.
-- Uso de Props.
-- Uso de useState.
-- Uso de useParams.
-- Uso de navegación con React Router.
+- Registro de usuario
+- Inicio de sesión
+- Catálogo de productos
+- Búsqueda de productos
+- Filtro por marca
+- Detalle de producto
+- Selección de talle
+- Carrito de compras
+- Favoritos
+- Checkout
+- Perfil de usuario
 
 ---
 
-## Instalación
+## 🛍️ Administrador
+
+- Dashboard administrativo
+- Gestión de productos
+- Crear productos
+- Editar productos
+- Eliminar productos
+- Carga de imágenes
+- Gestión de marcas
+- Gestión de categorías
+
+---
+
+# 💰 Gestión de productos
+
+Cada producto permite:
+
+- Marca
+- Categoría
+- Imagen
+- Precio
+- Descuento
+- Variantes por talle
+- Stock
+
+---
+
+# 📁 Estructura del proyecto
+
+```
+src
+│
+├── components
+│   ├── admin
+│   └── common
+│
+├── layouts
+│
+├── pages
+│   ├── admin
+│   └── user
+│
+├── services
+│
+├── store
+│   └── slices
+│
+├── App.jsx
+└── main.jsx
+```
+
+---
+
+# ⚙️ Instalación
+
+Clonar el repositorio:
+
+```bash
+git clone https://github.com/Manoblia/marketplace-frontend.git
+```
 
 Instalar dependencias:
 
@@ -77,31 +101,39 @@ Instalar dependencias:
 npm install
 ```
 
----
-
-## Ejecución
-
-Iniciar el servidor de desarrollo:
+Ejecutar el proyecto:
 
 ```bash
 npm run dev
 ```
 
-Abrir en el navegador:
+Compilar para producción:
 
-```txt
-http://localhost:5173/
+```bash
+npm run build
 ```
 
 ---
 
-## Integrantes
+# 🌐 Backend
+
+Este frontend consume la API disponible en:
+
+https://github.com/Manoblia/marketplace-backend
+
+---
+
+# 👥 Integrantes
 
 - Martín Amadeo Noblia
 - Santiago Gil Ishikawa
-- Adrian Boado 
+- Adrián Boado
 
 ---
+
+# 👨‍💻 Trabajo Práctico Integrador
+
+Proyecto desarrollado utilizando **React**, **Redux Toolkit** y **Spring Boot** para la implementación de una plataforma de comercio electrónico con funcionalidades para usuarios y administradores.
 
 
 
