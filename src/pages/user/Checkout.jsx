@@ -1,56 +1,40 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import API_URL from "../../api/api";
+import { useDispatch, useSelector } from "react-redux";
+import { checkout } from "../../store/slices/ordersSlice";
 
 function Checkout() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [payment, setPayment] = useState("Tarjeta");
-
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { loading } = useSelector((state) => state.orders);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const token = localStorage.getItem("token");
-
     if (!token) {
       alert("Tenés que iniciar sesión");
       navigate("/login");
       return;
     }
 
-    try {
-      const response = await fetch(`${API_URL}/api/orders/checkout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          fullName: name,
-          shippingAddress: address,
-          paymentMethod: payment,
-        }),
-      });
+    const result = await dispatch(
+      checkout({
+        fullName: name,
+        shippingAddress: address,
+        paymentMethod: payment,
+      })
+    );
 
-      if (response.ok) {
-        const order = await response.json();
-
-        localStorage.setItem(
-          "lastOrder",
-          JSON.stringify(order)
-        );
-
-        alert("Compra confirmada");
-
-        navigate("/order-success");
-      } else {
-        alert("No se pudo confirmar la compra");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Error al conectar con el servidor");
+    if (checkout.fulfilled.match(result)) {
+      localStorage.setItem("lastOrder", JSON.stringify(result.payload));
+      alert("Compra confirmada");
+      navigate("/order-success");
+    } else {
+      alert(result.payload || "No se pudo confirmar la compra");
     }
   };
 
@@ -84,8 +68,8 @@ function Checkout() {
           <option>Transferencia</option>
         </select>
 
-        <button type="submit">
-          Confirmar compra
+        <button type="submit" disabled={loading}>
+          {loading ? "Procesando..." : "Confirmar compra"}
         </button>
       </form>
     </section>

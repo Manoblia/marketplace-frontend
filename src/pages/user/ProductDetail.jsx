@@ -1,44 +1,47 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import API_URL from "../../api/api";
+import { useCallback, useEffect, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProductById } from "../../store/slices/productsSlice";
+import { addToCart } from "../../store/slices/cartSlice";
 
 function ProductDetail() {
   const { id } = useParams();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const [product, setProduct] = useState(null);
+  const {
+    selectedProduct: product,
+    loading,
+    error,
+  } = useSelector((state) => state.products);
+
+  const user = useSelector((state) => state.auth.user);
+
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/products/${id}`)
-      .then((res) => res.json())
-      .then((data) => setProduct(data))
-      .catch((error) =>
-        console.error("Error al cargar producto:", error)
-      );
-  }, [id]);
+    dispatch(fetchProductById(id));
+    setSelectedVariant(null);
+    setQuantity(1);
+  }, [dispatch, id]);
 
-  const increaseQuantity = () => {
-    if (
-      selectedVariant &&
-      quantity < selectedVariant.stock
-    ) {
-      setQuantity(quantity + 1);
+  const increaseQuantity = useCallback(() => {
+    if (selectedVariant && quantity < selectedVariant.stock) {
+      setQuantity((prev) => prev + 1);
     }
-  };
+  }, [selectedVariant, quantity]);
 
-  const decreaseQuantity = () => {
+  const decreaseQuantity = useCallback(() => {
     if (quantity > 1) {
-      setQuantity(quantity - 1);
+      setQuantity((prev) => prev - 1);
     }
-  };
+  }, [quantity]);
 
-  const addToCart = async () => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
+  const handleAddToCart = async () => {
+    if (!user) {
       alert("Tenés que iniciar sesión para agregar al carrito");
-      window.location.href = "/login";
+      navigate("/login");
       return;
     }
 
@@ -52,69 +55,114 @@ function ProductDetail() {
       return;
     }
 
-    const response = await fetch(
-      `${API_URL}/api/cart/items`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          variantId: selectedVariant.variantId,
-          quantity: quantity,
-        }),
-      }
+    const result = await dispatch(
+      addToCart({
+        variantId: selectedVariant.variantId,
+        quantity,
+      })
     );
 
-    if (response.ok) {
+    if (addToCart.fulfilled.match(result)) {
       alert("Producto agregado al carrito");
-      window.location.href = "/cart";
+      navigate("/cart");
     } else {
-      alert("No se pudo agregar al carrito");
+      alert(result.payload || "No se pudo agregar al carrito");
     }
   };
 
-  if (!product) {
+  if (loading) {
     return <h2>Cargando producto...</h2>;
   }
 
+  if (error) {
+    return <h2>{error}</h2>;
+  }
+
+  if (!product) {
+    return <h2>No se encontró el producto.</h2>;
+  }
+
+  const {
+    description,
+    price,
+    discount,
+    brand,
+    category,
+    variants,
+    images,
+  } = product;
+
+  const hasDiscount = discount > 0;
+
+  const finalPrice = hasDiscount
+    ? price - (price * discount) / 100
+    : price;
+
   const image =
-    product.images && product.images.length > 0
-      ? `data:${product.images[0].fileType};base64,${product.images[0].image}`
+    images?.length > 0
+      ? `data:${images[0].fileType};base64,${images[0].image}`
       : "https://via.placeholder.com/500x500?text=Zapatilla";
 
   return (
     <section className="product-detail">
       <div className="product-detail-image">
-        <img
-          src={image}
-          alt={product.description}
-        />
+        <img src={image} alt={description} />
       </div>
 
       <div className="product-detail-info">
         <p className="product-brand">
-          {product.brand?.brandName}
+          {brand?.brandName}
         </p>
 
-        <h1>{product.description}</h1>
+        <h1>{description}</h1>
 
-        <h2>
-          ARS {product.price?.toLocaleString("es-AR")}
+        {hasDiscount && (
+          <p
+            style={{
+              display: "inline-block",
+              background: "#d32f2f",
+              color: "#fff",
+              padding: "6px 10px",
+              borderRadius: "6px",
+              fontWeight: "bold",
+              marginBottom: "10px",
+            }}
+          >
+            {discount}% OFF
+          </p>
+        )}
+
+        {hasDiscount && (
+          <p
+            style={{
+              textDecoration: "line-through",
+              color: "#888",
+              fontSize: "20px",
+              margin: "8px 0",
+            }}
+          >
+            ARS {price?.toLocaleString("es-AR")}
+          </p>
+        )}
+
+        <h2
+          style={{
+            color: hasDiscount ? "#d32f2f" : "#111",
+          }}
+        >
+          ARS {finalPrice?.toLocaleString("es-AR")}
         </h2>
 
         <p className="detail-description">
-          Categoría: {product.category?.categoryName}
+          Categoría: {category?.categoryName}
         </p>
 
         <div className="sizes">
           <p>Seleccionar talle</p>
 
           <div>
-            {product.variants?.map((variant) => {
-              const withoutStock =
-                variant.stock <= 0;
+            {variants?.map((variant) => {
+              const withoutStock = variant.stock <= 0;
 
               return (
                 <button
@@ -126,13 +174,11 @@ function ProductDetail() {
                   }}
                   style={{
                     background:
-                      selectedVariant?.variantId ===
-                      variant.variantId
+                      selectedVariant?.variantId === variant.variantId
                         ? "#000"
                         : "#fff",
                     color:
-                      selectedVariant?.variantId ===
-                      variant.variantId
+                      selectedVariant?.variantId === variant.variantId
                         ? "#fff"
                         : withoutStock
                         ? "#aaa"
@@ -155,11 +201,8 @@ function ProductDetail() {
           {selectedVariant && (
             <>
               <p style={{ marginTop: "12px" }}>
-                Stock disponible:{" "}
-                <strong>
-                  {selectedVariant.stock}
-                </strong>{" "}
-                unidades
+                Stock disponible:
+                <strong> {selectedVariant.stock}</strong> unidades
               </p>
 
               <div
@@ -170,28 +213,18 @@ function ProductDetail() {
                   marginTop: "15px",
                 }}
               >
-                <button
-                  onClick={decreaseQuantity}
-                >
-                  -
-                </button>
+                <button onClick={decreaseQuantity}>-</button>
 
-                <span>
-                  Cantidad: {quantity}
-                </span>
+                <span>Cantidad: {quantity}</span>
 
-                <button
-                  onClick={increaseQuantity}
-                >
-                  +
-                </button>
+                <button onClick={increaseQuantity}>+</button>
               </div>
             </>
           )}
         </div>
 
         <button
-          onClick={addToCart}
+          onClick={handleAddToCart}
           className="detail-button"
         >
           Añadir al carrito

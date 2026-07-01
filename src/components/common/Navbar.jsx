@@ -1,23 +1,18 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "../../store/slices/authSlice";
 
 function Navbar() {
-  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  useEffect(() => {
-    const savedUser = JSON.parse(
-      localStorage.getItem("user")
-    );
+  const user = useSelector((state) => state.auth.user);
 
-    setUser(savedUser);
-  }, []);
+  const isAdmin = localStorage.getItem("isAdmin") === "true";
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("lastOrder");
-
-    window.location.href = "/";
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/");
   };
 
   return (
@@ -44,6 +39,18 @@ function Navbar() {
         <Link to="/profile">
           Mi cuenta
         </Link>
+
+        {isAdmin && (
+          <Link
+            to="/admin"
+            style={{
+              color: "#d32f2f",
+              fontWeight: "bold",
+            }}
+          >
+            Panel Admin
+          </Link>
+        )}
       </nav>
 
       <div
@@ -66,7 +73,7 @@ function Navbar() {
             </span>
 
             <button
-              onClick={logout}
+              onClick={handleLogout}
               style={{
                 padding: "8px 16px",
                 background: "#fff",

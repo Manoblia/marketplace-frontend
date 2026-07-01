@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import UserLayout from "./layouts/UserLayout";
+import AdminLayout from "./layouts/AdminLayout";
 
 import Home from "./pages/user/Home";
 import Products from "./pages/user/Products";
@@ -12,6 +13,12 @@ import OrderSuccess from "./pages/user/OrderSuccess";
 import Login from "./pages/user/Login";
 import Register from "./pages/user/Register";
 import Profile from "./pages/user/Profile";
+
+import AdminRoute from "./components/AdminRoute";
+import Dashboard from "./pages/admin/Dashboard";
+import ProductsAdmin from "./pages/admin/ProductsAdmin";
+import BrandsAdmin from "./pages/admin/BrandsAdmin";
+import CategoriesAdmin from "./pages/admin/CategoriesAdmin";
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -38,23 +45,10 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<UserLayout />}>
-
           <Route path="/" element={<Home />} />
-
-          <Route
-            path="/products"
-            element={<Products />}
-          />
-
-          <Route
-            path="/product/:id"
-            element={<ProductDetail />}
-          />
-
-          <Route
-            path="/favorites"
-            element={<Favorites />}
-          />
+          <Route path="/products" element={<Products />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/favorites" element={<Favorites />} />
 
           <Route
             path="/login"
@@ -109,7 +103,20 @@ function App() {
               </ProtectedRoute>
             }
           />
+        </Route>
 
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="products" element={<ProductsAdmin />} />
+          <Route path="brands" element={<BrandsAdmin />} />
+          <Route path="categories" element={<CategoriesAdmin />} />
         </Route>
       </Routes>
     </BrowserRouter>

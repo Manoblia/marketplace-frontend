@@ -1,29 +1,29 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import API_URL from "../../api/api";
+import { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchCart,
+  updateCartItem,
+  removeCartItem,
+  clearCart,
+} from "../../store/slices/cartSlice";
+import { fetchProducts } from "../../store/slices/productsSlice";
 
 function Cart() {
-  const [cart, setCart] = useState(null);
-  const [products, setProducts] = useState([]);
-
-  const token = localStorage.getItem("token");
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { data: cart, loading } = useSelector((state) => state.cart);
+  const { items: products } = useSelector((state) => state.products);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
     if (!token) {
-      window.location.href = "/login";
+      navigate("/login");
       return;
     }
-
-    fetch(`${API_URL}/api/cart`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => setCart(data));
-
-    fetch(`${API_URL}/api/products`)
-      .then((res) => res.json())
-      .then((data) => setProducts(data));
-  }, [token]);
+    dispatch(fetchCart());
+    dispatch(fetchProducts());
+  }, [dispatch, navigate]);
 
   const getProductByVariantId = (variantId) => {
     return products.find((product) =>
@@ -35,68 +35,29 @@ function Cart() {
     if (product?.images && product.images.length > 0) {
       return `data:${product.images[0].fileType};base64,${product.images[0].image}`;
     }
-
     return "https://via.placeholder.com/300x300?text=Zapatilla";
   };
 
-  const updateQuantity = async (item, newQuantity) => {
+  const handleUpdateQuantity = (item, newQuantity) => {
     if (newQuantity < 0) return;
-
-    const response = await fetch(`${API_URL}/api/cart/items/${item.cartItemId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
+    dispatch(
+      updateCartItem({
+        cartItemId: item.cartItemId,
         variantId: item.variant.variantId,
         quantity: newQuantity,
-      }),
-    });
-
-    if (response.ok) {
-      const updatedCart = await response.json();
-      setCart(updatedCart);
-    } else {
-      alert("No se pudo actualizar la cantidad");
-    }
+      })
+    );
   };
 
-  const removeItem = async (cartItemId) => {
-    const response = await fetch(`${API_URL}/api/cart/items/${cartItemId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (response.ok) {
-      setCart((prevCart) => ({
-        ...prevCart,
-        cartItems: prevCart.cartItems.filter(
-          (item) => item.cartItemId !== cartItemId
-        ),
-      }));
-    }
+  const handleRemoveItem = (cartItemId) => {
+    dispatch(removeCartItem(cartItemId));
   };
 
-  const clearCart = async () => {
-    const response = await fetch(`${API_URL}/api/cart`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (response.ok) {
-      setCart((prevCart) => ({
-        ...prevCart,
-        cartItems: [],
-      }));
-    }
+  const handleClearCart = () => {
+    dispatch(clearCart());
   };
 
-  if (!cart) return <h2>Cargando carrito...</h2>;
+  if (loading || !cart) return <h2>Cargando carrito...</h2>;
 
   if (!cart.cartItems || cart.cartItems.length === 0) {
     return (
@@ -127,7 +88,10 @@ function Cart() {
 
             return (
               <div className="cart-item" key={item.cartItemId}>
-                <img src={getProductImage(product)} alt={product?.description} />
+                <img
+                  src={getProductImage(product)}
+                  alt={product?.description}
+                />
 
                 <div className="cart-item-info">
                   <p className="product-brand">{product?.brand?.brandName}</p>
@@ -138,7 +102,9 @@ function Cart() {
 
                   <div className="cart-quantity">
                     <button
-                      onClick={() => updateQuantity(item, item.quantity - 1)}
+                      onClick={() =>
+                        handleUpdateQuantity(item, item.quantity - 1)
+                      }
                     >
                       -
                     </button>
@@ -146,14 +112,16 @@ function Cart() {
                     <span>{item.quantity}</span>
 
                     <button
-                      onClick={() => updateQuantity(item, item.quantity + 1)}
+                      onClick={() =>
+                        handleUpdateQuantity(item, item.quantity + 1)
+                      }
                     >
                       +
                     </button>
                   </div>
 
                   <button
-                    onClick={() => removeItem(item.cartItemId)}
+                    onClick={() => handleRemoveItem(item.cartItemId)}
                     style={{
                       marginTop: "15px",
                       padding: "10px",
@@ -202,7 +170,7 @@ function Cart() {
           </Link>
 
           <button
-            onClick={clearCart}
+            onClick={handleClearCart}
             style={{
               width: "100%",
               padding: "18px",

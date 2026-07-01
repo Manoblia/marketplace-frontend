@@ -1,36 +1,24 @@
 import { useState } from "react";
-import API_URL from "../../api/api";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { registerUser } from "../../store/slices/authSlice";
 
 function Register() {
   const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { loading } = useSelector((state) => state.auth);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    try {
-      const response = await fetch(`${API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userName,
-          email,
-          password,
-          rolId: 1,
-        }),
-      });
-
-      if (response.ok) {
-        alert("Usuario registrado correctamente");
-        window.location.href = "/login";
-      } else {
-        alert("Error al registrarse");
-      }
-    } catch (error) {
-      alert("Error al conectar con el servidor");
+    const result = await dispatch(registerUser({ userName, email, password }));
+    if (registerUser.fulfilled.match(result)) {
+      alert("Usuario registrado correctamente");
+      navigate("/login");
+    } else {
+      alert(result.payload || "Error al registrarse");
     }
   };
 
@@ -65,6 +53,7 @@ function Register() {
 
         <button
           type="submit"
+          disabled={loading}
           style={{
             width: "100%",
             padding: "12px",
@@ -73,7 +62,7 @@ function Register() {
             border: "none",
           }}
         >
-          Registrarse
+          {loading ? "Registrando..." : "Registrarse"}
         </button>
       </form>
     </div>

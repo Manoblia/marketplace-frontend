@@ -1,48 +1,23 @@
 import { useState } from "react";
-import API_URL from "../../api/api";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { loginUser } from "../../store/slices/authSlice";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { loading } = useSelector((state) => state.auth);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem("token", data.token);
-
-        // buscamos usuarios para obtener el nombre
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            name: email.split("@")[0],
-            email: email,
-          })
-        );
-
-        alert("Inicio de sesión exitoso");
-
-        window.location.href = "/";
-      } else {
-        alert("Email o contraseña incorrectos");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("No se pudo conectar con el servidor");
+    const result = await dispatch(loginUser({ email, password }));
+    if (loginUser.fulfilled.match(result)) {
+      alert("Inicio de sesión exitoso");
+      navigate("/");
+    } else {
+      alert(result.payload || "Email o contraseña incorrectos");
     }
   };
 
@@ -56,9 +31,7 @@ function Login() {
             type="email"
             placeholder="Correo electrónico"
             value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
+            onChange={(e) => setEmail(e.target.value)}
             style={{
               width: "100%",
               padding: "12px",
@@ -71,9 +44,7 @@ function Login() {
             type="password"
             placeholder="Contraseña"
             value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
+            onChange={(e) => setPassword(e.target.value)}
             style={{
               width: "100%",
               padding: "12px",
@@ -83,6 +54,7 @@ function Login() {
 
         <button
           type="submit"
+          disabled={loading}
           style={{
             marginTop: "20px",
             width: "100%",
@@ -92,7 +64,7 @@ function Login() {
             border: "none",
           }}
         >
-          Ingresar
+          {loading ? "Ingresando..." : "Ingresar"}
         </button>
       </form>
     </div>

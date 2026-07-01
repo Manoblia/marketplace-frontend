@@ -1,32 +1,24 @@
-import { useEffect, useState } from "react";
-import API_URL from "../../api/api";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchOrders } from "../../store/slices/ordersSlice";
+import { fetchProducts } from "../../store/slices/productsSlice";
 
 function Profile() {
-  const [orders, setOrders] = useState([]);
-  const [products, setProducts] = useState([]);
-
-  const token = localStorage.getItem("token");
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { items: orders, loading } = useSelector((state) => state.orders);
+  const { items: products } = useSelector((state) => state.products);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
     if (!token) {
-      window.location.href = "/login";
+      navigate("/login");
       return;
     }
-
-    fetch(`${API_URL}/api/orders`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => setOrders(data))
-      .catch((error) => console.error("Error cargando pedidos:", error));
-
-    fetch(`${API_URL}/api/products`)
-      .then((res) => res.json())
-      .then((data) => setProducts(data))
-      .catch((error) => console.error("Error cargando productos:", error));
-  }, [token]);
+    dispatch(fetchOrders());
+    dispatch(fetchProducts());
+  }, [dispatch, navigate]);
 
   const getProductByVariantId = (variantId) => {
     return products.find((product) =>
@@ -40,7 +32,9 @@ function Profile() {
 
       <h2 style={{ marginTop: "30px" }}>Mis pedidos</h2>
 
-      {orders.length === 0 ? (
+      {loading ? (
+        <p>Cargando pedidos...</p>
+      ) : orders.length === 0 ? (
         <p>No tenés pedidos todavía.</p>
       ) : (
         orders.map((order) => (
