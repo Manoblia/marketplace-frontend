@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchProducts } from "../../store/slices/productsSlice";
 import { fetchBrands } from "../../store/slices/brandsSlice";
 import { fetchCategories } from "../../store/slices/categoriesSlice";
+import { fetchAllOrders } from "../../store/slices/ordersSlice";
 
 function Dashboard() {
   const dispatch = useDispatch();
@@ -11,23 +12,64 @@ function Dashboard() {
   const { items: products } = useSelector((state) => state.products);
   const { items: brands } = useSelector((state) => state.brands);
   const { items: categories } = useSelector((state) => state.categories);
+  const { items: orders, loading: ordersLoading } = useSelector(
+    (state) => state.orders
+  );
 
   useEffect(() => {
     dispatch(fetchProducts());
     dispatch(fetchBrands());
     dispatch(fetchCategories());
+    dispatch(fetchAllOrders());
   }, [dispatch]);
 
   const totalImages = products.reduce((total, product) => {
     return total + (product.images?.length || 0);
   }, 0);
 
+  const getOrderTotal = (order) => {
+    if (order.total) return order.total;
+    if (order.totalPrice) return order.totalPrice;
+    if (order.amount) return order.amount;
+
+    if (order.orderItems) {
+      return order.orderItems.reduce((acc, item) => {
+        const price =
+          item.price ||
+          item.unitPrice ||
+          item.product?.price ||
+          item.variant?.product?.price ||
+          0;
+
+        return acc + price * (item.quantity || 1);
+      }, 0);
+    }
+
+    return 0;
+  };
+
+  const totalSales = orders.reduce((acc, order) => {
+    return acc + getOrderTotal(order);
+  }, 0);
+
   const cards = [
+    {
+      icon: "💰",
+      title: "Facturación",
+      value: `ARS ${totalSales.toLocaleString("es-AR")}`,
+      description: "Total vendido en la tienda",
+    },
+    {
+      icon: "🛒",
+      title: "Ventas",
+      value: orders.length,
+      description: "Pedidos realizados",
+    },
     {
       icon: "📦",
       title: "Productos",
       value: products.length,
-      description: "Productos disponibles en la tienda",
+      description: "Productos disponibles",
     },
     {
       icon: "🏷",
@@ -45,16 +87,18 @@ function Dashboard() {
       icon: "🖼",
       title: "Imágenes",
       value: totalImages,
-      description: "Imágenes asociadas a productos",
+      description: "Imágenes asociadas",
     },
   ];
+
+  const latestOrders = [...orders].slice(-8).reverse();
 
   return (
     <section>
       <div style={{ marginBottom: "35px" }}>
         <h1 style={{ marginBottom: "10px" }}>Dashboard</h1>
         <p style={{ color: "#666" }}>
-          Resumen general del panel de administración de STEP.
+          Resumen general de ventas y administración de STEP.
         </p>
       </div>
 
@@ -76,12 +120,7 @@ function Dashboard() {
               border: "1px solid #eee",
             }}
           >
-            <div
-              style={{
-                fontSize: "34px",
-                marginBottom: "12px",
-              }}
-            >
+            <div style={{ fontSize: "34px", marginBottom: "12px" }}>
               {card.icon}
             </div>
 
@@ -89,7 +128,7 @@ function Dashboard() {
 
             <p
               style={{
-                fontSize: "36px",
+                fontSize: "30px",
                 fontWeight: "bold",
                 margin: "12px 0",
               }}
@@ -97,9 +136,7 @@ function Dashboard() {
               {card.value}
             </p>
 
-            <p style={{ color: "#666" }}>
-              {card.description}
-            </p>
+            <p style={{ color: "#666" }}>{card.description}</p>
           </div>
         ))}
       </div>
@@ -113,14 +150,62 @@ function Dashboard() {
           boxShadow: "0 6px 16px rgba(0,0,0,.08)",
         }}
       >
-        <h2 style={{ marginBottom: "15px" }}>
-          Estado del sistema
-        </h2>
+        <h2 style={{ marginBottom: "15px" }}>Historial de ventas</h2>
 
-        <p style={{ color: "#666" }}>
-          El panel permite administrar productos, marcas, categorías e imágenes
-          de la tienda utilizando Redux Toolkit, Axios y la API Spring Boot.
-        </p>
+        {ordersLoading ? (
+          <p>Cargando ventas...</p>
+        ) : latestOrders.length === 0 ? (
+          <p style={{ color: "#666" }}>
+            Todavía no hay ventas registradas.
+          </p>
+        ) : (
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              marginTop: "15px",
+            }}
+          >
+            <thead>
+              <tr style={{ background: "#111", color: "#fff" }}>
+                <th style={{ padding: "12px", textAlign: "left" }}>
+                  Pedido
+                </th>
+                <th style={{ textAlign: "left" }}>Cliente</th>
+                <th style={{ textAlign: "left" }}>Pago</th>
+                <th style={{ textAlign: "left" }}>Total</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {latestOrders.map((order) => (
+                <tr
+                  key={order.orderId}
+                  style={{ borderBottom: "1px solid #eee" }}
+                >
+                  <td style={{ padding: "12px" }}>
+                    #STEP-{order.orderId}
+                  </td>
+
+                  <td>
+                    {order.fullName ||
+                      order.user?.name ||
+                      order.user?.email ||
+                      "Cliente"}
+                  </td>
+
+                  <td>{order.paymentMethod || "No informado"}</td>
+
+                  <td>
+                    <strong>
+                      ARS {getOrderTotal(order).toLocaleString("es-AR")}
+                    </strong>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </section>
   );

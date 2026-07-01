@@ -36,19 +36,9 @@ function Navbar() {
           Carrito
         </Link>
 
-        <Link to="/profile">
-          Mi cuenta
-        </Link>
-
-        {isAdmin && (
-          <Link
-            to="/admin"
-            style={{
-              color: "#d32f2f",
-              fontWeight: "bold",
-            }}
-          >
-            Panel Admin
+        {user && (
+          <Link to="/profile">
+            Mi cuenta
           </Link>
         )}
       </nav>
@@ -58,7 +48,7 @@ function Navbar() {
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "20px",
+          gap: "18px",
         }}
       >
         {user ? (
@@ -71,6 +61,21 @@ function Navbar() {
             >
               Hola, {user.name || user.email?.split("@")[0]}
             </span>
+
+            {isAdmin && (
+              <Link
+                to="/admin"
+                style={{
+                  padding: "8px 16px",
+                  background: "#111",
+                  color: "#fff",
+                  textDecoration: "none",
+                  borderRadius: "4px",
+                }}
+              >
+                Panel Admin
+              </Link>
+            )}
 
             <button
               onClick={handleLogout}
@@ -85,9 +90,29 @@ function Navbar() {
             </button>
           </>
         ) : (
-          <Link to="/login">
-            Iniciar sesión
-          </Link>
+          <>
+            <Link
+              to="/login"
+              style={{
+                textDecoration: "none",
+              }}
+            >
+              Iniciar sesión
+            </Link>
+
+            <Link
+              to="/register"
+              style={{
+                padding: "8px 16px",
+                background: "#111",
+                color: "#fff",
+                textDecoration: "none",
+                borderRadius: "4px",
+              }}
+            >
+              Registrarse
+            </Link>
+          </>
         )}
       </div>
     </header>

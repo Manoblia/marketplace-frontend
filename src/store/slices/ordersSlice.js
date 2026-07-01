@@ -16,6 +16,21 @@ export const fetchOrders = createAsyncThunk(
   }
 );
 
+export const fetchAllOrders = createAsyncThunk(
+  "orders/fetchAllAdmin",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/api/orders/all");
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message ??
+          "Error al cargar todas las ventas"
+      );
+    }
+  }
+);
+
 export const checkout = createAsyncThunk(
   "orders/checkout",
   async (
@@ -66,7 +81,7 @@ const ordersSlice = createSlice({
   extraReducers: (builder) => {
     builder
 
-      // FETCH ORDERS
+      // PEDIDOS DEL USUARIO
 
       .addCase(fetchOrders.pending, (state) => {
         state.loading = true;
@@ -81,6 +96,23 @@ const ordersSlice = createSlice({
       .addCase(fetchOrders.rejected, (state, action) => {
         state.loading = false;
         state.items = [];
+        state.error = action.payload;
+      })
+
+      // TODAS LAS VENTAS (ADMIN)
+
+      .addCase(fetchAllOrders.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(fetchAllOrders.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = action.payload;
+      })
+
+      .addCase(fetchAllOrders.rejected, (state, action) => {
+        state.loading = false;
         state.error = action.payload;
       })
 

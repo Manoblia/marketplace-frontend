@@ -12,22 +12,27 @@ import { fetchProducts } from "../../store/slices/productsSlice";
 function Cart() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const { data: cart, loading } = useSelector((state) => state.cart);
   const { items: products } = useSelector((state) => state.products);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+
     if (!token) {
       navigate("/login");
       return;
     }
+
     dispatch(fetchCart());
     dispatch(fetchProducts());
   }, [dispatch, navigate]);
 
   const getProductByVariantId = (variantId) => {
     return products.find((product) =>
-      product.variants?.some((variant) => variant.variantId === variantId)
+      product.variants?.some(
+        (variant) => variant.variantId === variantId
+      )
     );
   };
 
@@ -35,11 +40,21 @@ function Cart() {
     if (product?.images && product.images.length > 0) {
       return `data:${product.images[0].fileType};base64,${product.images[0].image}`;
     }
+
     return "https://via.placeholder.com/300x300?text=Zapatilla";
+  };
+
+  const getFinalPrice = (product) => {
+    if (!product) return 0;
+
+    return product.discount > 0
+      ? product.price * (1 - product.discount / 100)
+      : product.price;
   };
 
   const handleUpdateQuantity = (item, newQuantity) => {
     if (newQuantity < 0) return;
+
     dispatch(
       updateCartItem({
         cartItemId: item.cartItemId,
@@ -72,7 +87,8 @@ function Cart() {
 
   const subtotal = cart.cartItems.reduce((acc, item) => {
     const product = getProductByVariantId(item.variant.variantId);
-    return acc + (product?.price || 0) * item.quantity;
+
+    return acc + getFinalPrice(product) * item.quantity;
   }, 0);
 
   const total = subtotal + shipping;
@@ -86,15 +102,22 @@ function Cart() {
           {cart.cartItems.map((item) => {
             const product = getProductByVariantId(item.variant.variantId);
 
+            const finalPrice = getFinalPrice(product);
+
             return (
-              <div className="cart-item" key={item.cartItemId}>
+              <div
+                className="cart-item"
+                key={item.cartItemId}
+              >
                 <img
                   src={getProductImage(product)}
                   alt={product?.description}
                 />
 
                 <div className="cart-item-info">
-                  <p className="product-brand">{product?.brand?.brandName}</p>
+                  <p className="product-brand">
+                    {product?.brand?.brandName}
+                  </p>
 
                   <h2>{product?.description}</h2>
 
@@ -103,7 +126,10 @@ function Cart() {
                   <div className="cart-quantity">
                     <button
                       onClick={() =>
-                        handleUpdateQuantity(item, item.quantity - 1)
+                        handleUpdateQuantity(
+                          item,
+                          item.quantity - 1
+                        )
                       }
                     >
                       -
@@ -113,7 +139,10 @@ function Cart() {
 
                     <button
                       onClick={() =>
-                        handleUpdateQuantity(item, item.quantity + 1)
+                        handleUpdateQuantity(
+                          item,
+                          item.quantity + 1
+                        )
                       }
                     >
                       +
@@ -121,7 +150,9 @@ function Cart() {
                   </div>
 
                   <button
-                    onClick={() => handleRemoveItem(item.cartItemId)}
+                    onClick={() =>
+                      handleRemoveItem(item.cartItemId)
+                    }
                     style={{
                       marginTop: "15px",
                       padding: "10px",
@@ -134,12 +165,49 @@ function Cart() {
                   </button>
                 </div>
 
-                <strong>
-                  ARS{" "}
-                  {((product?.price || 0) * item.quantity).toLocaleString(
-                    "es-AR"
+                <div
+                  style={{
+                    textAlign: "right",
+                  }}
+                >
+                  {product?.discount > 0 && (
+                    <>
+                      <div
+                        style={{
+                          textDecoration: "line-through",
+                          color: "#888",
+                          fontSize: "14px",
+                        }}
+                      >
+                        ARS{" "}
+                        {(
+                          product.price * item.quantity
+                        ).toLocaleString("es-AR")}
+                      </div>
+
+                      <div
+                        style={{
+                          color: "#d32f2f",
+                          fontWeight: "bold",
+                          marginBottom: "6px",
+                        }}
+                      >
+                        {product.discount}% OFF
+                      </div>
+                    </>
                   )}
-                </strong>
+
+                  <strong
+                    style={{
+                      fontSize: "20px",
+                    }}
+                  >
+                    ARS{" "}
+                    {(
+                      finalPrice * item.quantity
+                    ).toLocaleString("es-AR")}
+                  </strong>
+                </div>
               </div>
             );
           })}
@@ -150,22 +218,36 @@ function Cart() {
 
           <div>
             <span>Subtotal</span>
-            <strong>ARS {subtotal.toLocaleString("es-AR")}</strong>
+
+            <strong>
+              ARS{" "}
+              {subtotal.toLocaleString("es-AR")}
+            </strong>
           </div>
 
           <div>
             <span>Envío</span>
-            <strong>ARS {shipping.toLocaleString("es-AR")}</strong>
+
+            <strong>
+              ARS{" "}
+              {shipping.toLocaleString("es-AR")}
+            </strong>
           </div>
 
           <hr />
 
           <div>
             <span>Total</span>
-            <strong>ARS {total.toLocaleString("es-AR")}</strong>
+
+            <strong>
+              ARS {total.toLocaleString("es-AR")}
+            </strong>
           </div>
 
-          <Link to="/checkout" className="detail-button">
+          <Link
+            to="/checkout"
+            className="detail-button"
+          >
             Finalizar compra
           </Link>
 
